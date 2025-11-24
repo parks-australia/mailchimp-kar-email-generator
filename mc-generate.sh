@@ -108,7 +108,8 @@ function testMailchimpResponse() {
     elif [[ $responseStatus =~ ^[0-9]+$ ]]; then
         if [[ $responseStatus -lt 200 || $responseStatus -gt 299 ]]; then
             logWarning "Received HTTP response '$responseStatus' from Mailchimp! Quitting..."
-            logError "$response"
+            deleteEmail $MAILCHIMP_EMAIL_ID
+            logError "$response" $responseStatus
         fi
         return 0
     else 
@@ -443,7 +444,8 @@ if [[ $DEBUG == "true" && -f $TEST_DATA ]]; then
     EXIT_CODE=$? testResponseAndQuit 'Get HTML test data'
 else    
     logInfo "Sourcing data from '$EMAIL_CONTENT_URL'"
-    HTML=$(curl -sf "$EMAIL_CONTENT_URL")
+    # TODO: Add authentication options
+    HTML=$(curl -H "X-API-KEY: $1234" -sf "$EMAIL_CONTENT_URL")
     EXIT_CODE=$? testResponseAndQuit 'Get HTML data'
 fi
 
@@ -567,9 +569,9 @@ if [[ ! $DEBUG == "true" ]]; then
     "https://${MAILCHIMP_SERVER_PREFIX}.api.mailchimp.com/3.0/campaigns/$MAILCHIMP_EMAIL_ID/actions/schedule" \
     --user "anystring:${MAILCHIMP_API_KEY}" \
     -d '{"schedule_time": '\""$MAILCHIMP_SCHEDULED_TIME"\"'}')
-    EXIT_CODE=$? testResponseAndQuit "Set up Mailchimp email schedule"
 
-    testMailchimpResponse $MAILCHIMP_EMAIL_SCHEDULE
+    testMailchimpResponse "$MAILCHIMP_EMAIL_SCHEDULE"
+    EXIT_CODE=$? testResponseAndQuit "Set up Mailchimp email schedule"
 
     logInfo "Email Campaign scheduled successfully!"
 else
